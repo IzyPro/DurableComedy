@@ -28,3 +28,4 @@ jobs:
           file: ./ComedyBot/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/durablecomedy:latest
+          provenance: false
