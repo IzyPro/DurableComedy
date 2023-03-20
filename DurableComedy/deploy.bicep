@@ -22,7 +22,7 @@ param runtime string = 'dotnet'
 
 var functionAppName = appName
 var hostingPlanName = appName
-var storageAccountName = '${appName}${uniqueString(resourceGroup().id)}'
+var storageAccountName = '${appName}storage'
 var functionWorkerRuntime = runtime
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
