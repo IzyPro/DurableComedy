@@ -1,0 +1,24 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build container image
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: azure/docker-login@v1
+      with:
+          login-server: durablecomedycr.azurecr.io
+          username: ${{ secrets.AZURE_CR_USERNAME }}
+          password: ${{ secrets.AZURE_CR_PASSWORD }}
+          
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+          push: true
+      
