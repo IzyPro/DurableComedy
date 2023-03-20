@@ -16,10 +16,6 @@ jobs:
           login-server: durablecomedycr.azurecr.io
           username: ${{ secrets.AZURE_CR_USERNAME }}
           password: ${{ secrets.AZURE_CR_PASSWORD }}
-          
-    - name: Build and push
-      uses: docker/build-push-action@v2
-      with:
-          push: true
-          tags: ${{ github.sha }}
-      
+    - run: |
+          docker build . -t durablecomedycr.azurecr.io/durablecomedycr:latest
+          docker push durablecomedycr.azurecr.io/durablecomedycr:latest
