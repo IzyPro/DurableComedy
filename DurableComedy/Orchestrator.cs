@@ -37,7 +37,7 @@ namespace DurableComedy
         [OpenApiParameter(name: "instanceID", In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "DurableComedyInstanceID")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "Success")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, [OrchestrationClient] IDurableOrchestrationClient starter)
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, [DurableClient] IDurableOrchestrationClient starter)
         {
             _logger.LogInformation("HTTP trigger function processing request.");
 
@@ -57,12 +57,23 @@ namespace DurableComedy
             Console.WriteLine($"Image Name: {containerImage}");
 
             var ipAddress = await context.CallActivityAsync<string>(Function.OrchestrateCG, (Constants.ContainerGroupName, containerImage, context.InstanceId));
-            
+
+            Console.WriteLine("Waiting for external event...");
             //Return Boolean, this will be invoked from the ACI container once its done with its job
-            await context.WaitForExternalEvent(Function.JobFinished, TimeSpan.FromMinutes(3));
+            try
+            {
+                await context.WaitForExternalEvent(Function.JobFinished, TimeSpan.FromMinutes(3));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An Error Occured - " + ex.ToString());
+            }
+            finally
+            {
+                //This activition function delete the ACI group once its done with its job
+                await context.CallActivityAsync<string>(Function.DeleteCG, Constants.ContainerGroupName);
+            }
             
-            //This activition function delete the ACI group once its done with its job
-            await context.CallActivityAsync<string>(Function.DeleteCG, Constants.ContainerGroupName);
 
             return result;
         }
@@ -84,38 +95,55 @@ namespace DurableComedy
             Region azureRegion = resGroup.Region;
 
             // Create the container group
-            
-            Task.Run(() => 
-                azure.ContainerGroups.Define(containerGroupName)
-                    .WithRegion(azureRegion)
-                    .WithExistingResourceGroup(resourceGroupName)
-                    .WithLinux()
-                    .WithPublicImageRegistryOnly()
-                    //.WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
-                    .WithoutVolume()
-                    .DefineContainerInstance(containerGroupName)
-                        .WithImage(containerImage)
-                        .WithExternalTcpPort(80)
-                        .WithCpuCoreCount(1.0)
-                        .WithMemorySizeInGB(1)
-                        .WithEnvironmentVariable("instance", instanceId)
-                        .Attach()
-                    .WithDnsPrefix(containerGroupName)
-                    .CreateAsync()
-            );
-            IContainerGroup containerGroup = null;
-            while (containerGroup == null)
-            {
-                containerGroup = azure.ContainerGroups.GetByResourceGroup(resourceGroupName, containerGroupName);
-                Console.Write(".");
-                SdkContext.DelayProvider.Delay(1000);
-            }
-            // Poll until the container group is running
-            while (containerGroup.State != "Running")
-            {
-                Console.Write($"\nContainer group state: {containerGroup.Refresh().State}");
-                Thread.Sleep(1000);
-            }
+
+            var containerGroup = azure.ContainerGroups.Define(containerGroupName)
+                .WithRegion(azureRegion)
+                .WithExistingResourceGroup(resourceGroupName)
+                .WithLinux()
+                .WithPublicImageRegistryOnly()
+                //.WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
+                .WithoutVolume()
+                .DefineContainerInstance(containerGroupName)
+                    .WithImage(containerImage)
+                    .WithExternalTcpPort(80)
+                    .WithCpuCoreCount(1.0)
+                    .WithMemorySizeInGB(1)
+                    .WithEnvironmentVariable("instance", instanceId)
+                    .Attach()
+                .WithDnsPrefix(containerGroupName)
+                .Create();
+
+            //Task.Run(() => 
+            //    azure.ContainerGroups.Define(containerGroupName)
+            //        .WithRegion(azureRegion)
+            //        .WithExistingResourceGroup(resourceGroupName)
+            //        .WithLinux()
+            //        //.WithPublicImageRegistryOnly()
+            //        .WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
+            //        .WithoutVolume()
+            //        .DefineContainerInstance(containerGroupName)
+            //            .WithImage(containerImage)
+            //            .WithExternalTcpPort(80)
+            //            .WithCpuCoreCount(1.0)
+            //            .WithMemorySizeInGB(1)
+            //            .WithEnvironmentVariable("instance", instanceId)
+            //            .Attach()
+            //        .WithDnsPrefix(containerGroupName)
+            //        .CreateAsync()
+            //);
+            //IContainerGroup containerGroup = null;
+            //while (containerGroup == null)
+            //{
+            //    containerGroup = azure.ContainerGroups.GetByResourceGroup(resourceGroupName, containerGroupName);
+            //    Console.Write(".");
+            //    SdkContext.DelayProvider.Delay(1000);
+            //}
+            //// Poll until the container group is running
+            //while (containerGroup.State != "Running")
+            //{
+            //    Console.Write($"\nContainer group state: {containerGroup.Refresh().State}");
+            //    Thread.Sleep(1000);
+            //}
 
             Console.WriteLine($"Container group '{containerGroup.Name}' will be reachable at http://{containerGroup.Fqdn} once DNS has propagated.");
             return containerGroup.IPAddress;
@@ -125,7 +153,7 @@ namespace DurableComedy
         public static string RunDelete([ActivityTrigger] string name, ILogger log)
         {
             var azure = Authenticate();
-            DeleteContainerGroup(azure, Constants.ResourceGroupName, name);
+            DeleteContainerGroup(azure, EnvironmentVariables.ResourceGroupName, name);
             return $"Container Group {name} Deleted";
         }
 
