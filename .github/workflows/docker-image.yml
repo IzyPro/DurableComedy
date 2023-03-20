@@ -17,5 +17,5 @@ jobs:
           username: ${{ secrets.AZURE_CR_USERNAME }}
           password: ${{ secrets.AZURE_CR_PASSWORD }}
     - run: |
-          docker build . -t durablecomedycr.azurecr.io/durablecomedycr:latest
+          docker build ./ComedyBot/Dockerfile -t durablecomedycr.azurecr.io/durablecomedycr:latest
           docker push durablecomedycr.azurecr.io/durablecomedycr:latest
