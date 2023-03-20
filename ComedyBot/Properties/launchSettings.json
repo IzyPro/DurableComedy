@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ComedyBot": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

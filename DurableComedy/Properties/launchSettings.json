@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DurableComedy": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7116",
+      "launchBrowser": true,
+      "launchUrl": "api/swagger/ui"
+    }
+  }
+}
