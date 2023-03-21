@@ -88,65 +88,73 @@ namespace DurableComedy
 
         private static string CreateContainerGroup(IAzure azure, string resourceGroupName, string containerGroupName, string containerImage, string instanceId)
         {
-            Console.WriteLine($"\nCreating container group '{containerGroupName}'...");
+            try
+            {
+                Console.WriteLine($"\nCreating container group '{containerGroupName}'...");
 
-            // Get the resource group's region
-            IResourceGroup resGroup = azure.ResourceGroups.GetByName(resourceGroupName);
-            Region azureRegion = resGroup.Region;
+                // Get the resource group's region
+                IResourceGroup resGroup = azure.ResourceGroups.GetByName(resourceGroupName);
+                Region azureRegion = resGroup.Region;
 
-            // Create the container group
+                // Create the container group
 
-            var containerGroup = azure.ContainerGroups.Define(containerGroupName)
-                .WithRegion(azureRegion)
-                .WithExistingResourceGroup(resourceGroupName)
-                .WithLinux()
-                .WithPublicImageRegistryOnly()
-                //.WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
-                .WithoutVolume()
-                .DefineContainerInstance(containerGroupName)
-                    .WithImage(containerImage)
-                    .WithExternalTcpPort(80)
-                    .WithCpuCoreCount(1.0)
-                    .WithMemorySizeInGB(1)
-                    .WithEnvironmentVariable("instance", instanceId)
-                    .Attach()
-                .WithDnsPrefix(containerGroupName)
-                .Create();
+                //var containerGroup = azure.ContainerGroups.Define(containerGroupName)
+                //    .WithRegion(azureRegion)
+                //    .WithExistingResourceGroup(resourceGroupName)
+                //    .WithLinux()
+                //    .WithPublicImageRegistryOnly()
+                //    //.WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
+                //    .WithoutVolume()
+                //    .DefineContainerInstance(containerGroupName)
+                //        .WithImage(containerImage)
+                //        .WithExternalTcpPort(80)
+                //        .WithCpuCoreCount(1.0)
+                //        .WithMemorySizeInGB(1)
+                //        .WithEnvironmentVariable("instance", instanceId)
+                //        .Attach()
+                //    .WithDnsPrefix(containerGroupName)
+                //    .Create();
 
-            //Task.Run(() => 
-            //    azure.ContainerGroups.Define(containerGroupName)
-            //        .WithRegion(azureRegion)
-            //        .WithExistingResourceGroup(resourceGroupName)
-            //        .WithLinux()
-            //        //.WithPublicImageRegistryOnly()
-            //        .WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
-            //        .WithoutVolume()
-            //        .DefineContainerInstance(containerGroupName)
-            //            .WithImage(containerImage)
-            //            .WithExternalTcpPort(80)
-            //            .WithCpuCoreCount(1.0)
-            //            .WithMemorySizeInGB(1)
-            //            .WithEnvironmentVariable("instance", instanceId)
-            //            .Attach()
-            //        .WithDnsPrefix(containerGroupName)
-            //        .CreateAsync()
-            //);
-            //IContainerGroup containerGroup = null;
-            //while (containerGroup == null)
-            //{
-            //    containerGroup = azure.ContainerGroups.GetByResourceGroup(resourceGroupName, containerGroupName);
-            //    Console.Write(".");
-            //    SdkContext.DelayProvider.Delay(1000);
-            //}
-            //// Poll until the container group is running
-            //while (containerGroup.State != "Running")
-            //{
-            //    Console.Write($"\nContainer group state: {containerGroup.Refresh().State}");
-            //    Thread.Sleep(1000);
-            //}
+                Task.Run(() =>
+                    azure.ContainerGroups.Define(containerGroupName)
+                        .WithRegion(azureRegion)
+                        .WithExistingResourceGroup(resourceGroupName)
+                        .WithLinux()
+                        //.WithPublicImageRegistryOnly()
+                        .WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
+                        .WithoutVolume()
+                        .DefineContainerInstance(containerGroupName)
+                            .WithImage(containerImage)
+                            .WithExternalTcpPort(80)
+                            .WithCpuCoreCount(1.0)
+                            .WithMemorySizeInGB(1)
+                            .WithEnvironmentVariable("instance", instanceId)
+                            .Attach()
+                        .WithDnsPrefix(containerGroupName)
+                        .CreateAsync()
+                );
+                IContainerGroup containerGroup = null;
+                while (containerGroup == null)
+                {
+                    containerGroup = azure.ContainerGroups.GetByResourceGroup(resourceGroupName, containerGroupName);
+                    Console.Write(".");
+                    SdkContext.DelayProvider.Delay(1000);
+                }
+                // Poll until the container group is running
+                while (containerGroup.State != "Running")
+                {
+                    Console.Write($"\nContainer group state: {containerGroup.Refresh().State}");
+                    Thread.Sleep(1000);
+                }
 
-            Console.WriteLine($"Container group '{containerGroup.Name}' will be reachable at http://{containerGroup.Fqdn} once DNS has propagated.");
-            return containerGroup.IPAddress;
+                Console.WriteLine($"\nContainer group '{containerGroup.Name}' will be reachable at http://{containerGroup.Fqdn} once DNS has propagated.");
+                return containerGroup.IPAddress;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to create Container Group - {ex.Message}");
+                return null;
+            }
         }
 
         [FunctionName(Function.DeleteCG)]

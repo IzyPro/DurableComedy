@@ -41,19 +41,25 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2021-03-01' = {
     name: 'Y1'
     tier: 'Dynamic'
   }
-  properties: {}
+  properties: {
+    computeMode: 'Dynamic'
+    reserved: true
+  }
 }
 
 resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
   name: functionAppName
   location: location
-  kind: 'functionapp'
+  kind: 'functionapp,linux'
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
+    reserved: true
     serverFarmId: hostingPlan.id
     siteConfig: {
+      alwaysOn: true
+      linuxFxVersion: 'dotnet|6.0'
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -75,10 +81,28 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: functionWorkerRuntime
         }
+        {
+          name: 'Project'
+          value: 'DurableComedy'
+        }
       ]
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
     }
     httpsOnly: true
+  }
+  dependsOn: [
+    storageAccount
+    hostingPlan
+  ]
+}
+
+resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-03-01' = {
+  parent: functionApp
+  name: 'web'
+  properties: {
+    repoUrl: 'https://github.com/IzyPro/DurableComedy'
+    branch: 'main'
+    isManualIntegration: false
   }
 }
