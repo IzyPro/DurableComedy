@@ -81,10 +81,6 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: functionWorkerRuntime
         }
-        {
-          name: 'Project'
-          value: 'DurableComedy'
-        }
       ]
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
