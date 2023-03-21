@@ -2,7 +2,7 @@ on: [push]
 name: Azure ARM
 env:
   AZURE_FUNCTIONAPP_NAME: 'durablecomedy'
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '${{ github.workspace }}/DurableComedy'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './DurableComedy'
   DOTNET_VERSION: '6.0.202'
 jobs:
   build-and-deploy:
