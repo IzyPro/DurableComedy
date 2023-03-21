@@ -5,7 +5,7 @@ using HttpClient client = new();
 client.DefaultRequestHeaders.Accept.Clear();
 
 await TellAJoke(client);
-await RaiseCompletedEvent(client, "DurableComedyInstanceID", "Job_Finished_Event");
+await RaiseCompletedEvent(client, "testInstance", "Job_Finished_Event");
 
 static async Task TellAJoke(HttpClient client)
 {
@@ -61,7 +61,7 @@ static async Task<HttpResponseMessage> ProcessHTTPRequestAsync(HttpClient client
 static async Task RaiseCompletedEvent(HttpClient client, string instanceId, string eventName)
 {
     string baseURL = "https://durablecomedy.azurewebsites.net"; //"http://localhost:7116";
-    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/admin/extensions/DurableTaskExtension/instances/{instanceId}/raiseEvent/{eventName}?taskHub=TestHubName&connection=Storage&code=cI5f7vA1vszjjnQGLpCBEKCEBvx1nZ6VNDLGnViGZn8iAzFuf5WiRg==");
+    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/{eventName}?taskHub=durablecomedy&connection=Storage&code=5XIu6WghnBJJ-H3Bms5T8ReToVZSBcv491_-teLJ09tBAzFunUAd0Q==");
     if (!response.IsSuccessStatusCode)
     {
         Console.WriteLine($"\nFailed to Raise Event {eventName}. Press Enter to try again or any other key to exit");

@@ -39,13 +39,13 @@ namespace DurableComedy
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, [DurableClient] IDurableOrchestrationClient starter)
         {
-            _logger.LogInformation("HTTP trigger function processing request.");
+            Log("HTTP trigger function processing request.");
 
             string containerImage = req.Query["containerImage"];
             string instanceID = req.Query["instanceID"];
 
             string instanceId = await starter.StartNewAsync(Function.RunOrchestrator, instanceID, containerImage);
-            _logger.LogInformation("Orchestration Process Started");
+            Log("Orchestration Process Started");
             return starter.CreateCheckStatusResponse(req, instanceId);
         }
 
@@ -54,7 +54,7 @@ namespace DurableComedy
         {
             var result = new List<string>();
             var containerImage = context.GetInput<string>();
-            Console.WriteLine($"Image Name: {containerImage}");
+            Log($"Image Name: {containerImage}");
 
             var ipAddress = await context.CallActivityAsync<string>(Function.OrchestrateCG, (Constants.ContainerGroupName, containerImage, context.InstanceId));
 
@@ -66,7 +66,7 @@ namespace DurableComedy
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An Error Occured - " + ex.ToString());
+                Log("An Error Occured - " + ex.ToString());
             }
             finally
             {
@@ -77,18 +77,18 @@ namespace DurableComedy
         }
 
         [FunctionName(Function.OrchestrateCG)]
-        public static string CreateAciGroup([ActivityTrigger] Tuple<string, string, string> args, ILogger log)
+        public string CreateAciGroup([ActivityTrigger] Tuple<string, string, string> args, ILogger log)
         {
             var azure = Authenticate();
             return CreateContainerGroup(azure, EnvironmentVariables.ResourceGroupName, args.Item1, args.Item2, args.Item3);
         }
 
 
-        private static string CreateContainerGroup(IAzure azure, string resourceGroupName, string containerGroupName, string containerImage, string instanceId)
+        private string CreateContainerGroup(IAzure azure, string resourceGroupName, string containerGroupName, string containerImage, string instanceId)
         {
             try
             {
-                Console.WriteLine($"\nCreating container group '{containerGroupName}'...");
+                Log($"\nCreating container group '{containerGroupName}'...");
 
                 // Get the resource group's region
                 IResourceGroup resGroup = azure.ResourceGroups.GetByName(resourceGroupName);
@@ -96,30 +96,13 @@ namespace DurableComedy
 
                 // Create the container group
 
-                //var containerGroup = azure.ContainerGroups.Define(containerGroupName)
-                //    .WithRegion(azureRegion)
-                //    .WithExistingResourceGroup(resourceGroupName)
-                //    .WithLinux()
-                //    .WithPublicImageRegistryOnly()
-                //    //.WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
-                //    .WithoutVolume()
-                //    .DefineContainerInstance(containerGroupName)
-                //        .WithImage(containerImage)
-                //        .WithExternalTcpPort(80)
-                //        .WithCpuCoreCount(1.0)
-                //        .WithMemorySizeInGB(1)
-                //        .WithEnvironmentVariable("instance", instanceId)
-                //        .Attach()
-                //    .WithDnsPrefix(containerGroupName)
-                //    .Create();
-
                 Task.Run(() =>
                     azure.ContainerGroups.Define(containerGroupName)
                         .WithRegion(azureRegion)
                         .WithExistingResourceGroup(resourceGroupName)
                         .WithLinux()
-                        //.WithPublicImageRegistryOnly()
-                        .WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
+                        .WithPublicImageRegistryOnly()
+                        //.WithPrivateImageRegistry(EnvironmentVariables.Server, EnvironmentVariables.Username, EnvironmentVariables.Password)
                         .WithoutVolume()
                         .DefineContainerInstance(containerGroupName)
                             .WithImage(containerImage)
@@ -141,11 +124,11 @@ namespace DurableComedy
                 // Poll until the container group is running
                 while (containerGroup.State != "Running")
                 {
-                    Console.Write($"\nContainer group state: {containerGroup.Refresh().State}");
+                    Log($"Container group state: {containerGroup.Refresh().State}");
                     Thread.Sleep(1000);
                 }
 
-                Console.WriteLine($"\nContainer group '{containerGroup.Name}' will be reachable at http://{containerGroup.Fqdn} once DNS has propagated.");
+                Log($"Container group '{containerGroup.Name}' will be reachable at http://{containerGroup.Fqdn} once DNS has propagated.");
                 return containerGroup.IPAddress;
             }
             catch (Exception ex)
@@ -156,14 +139,15 @@ namespace DurableComedy
         }
 
         [FunctionName(Function.DeleteCG)]
-        public static string RunDelete([ActivityTrigger] string name, ILogger log)
+        public string RunDelete([ActivityTrigger] string name, ILogger log)
         {
             var azure = Authenticate();
             DeleteContainerGroup(azure, EnvironmentVariables.ResourceGroupName, name);
+            Log($"Container Group {name} Deleted");
             return $"Container Group {name} Deleted";
         }
 
-        private static void DeleteContainerGroup(IAzure azure, string resourceGroupName, string containerGroupName)
+        private void DeleteContainerGroup(IAzure azure, string resourceGroupName, string containerGroupName)
         {
             IContainerGroup containerGroup = null;
             while (containerGroup == null)
@@ -171,8 +155,8 @@ namespace DurableComedy
                 containerGroup = azure.ContainerGroups.GetByResourceGroup(resourceGroupName, containerGroupName);
                 SdkContext.DelayProvider.Delay(1000);
             }
-            Console.WriteLine($"Deleting container group '{containerGroupName}'...");
-            azure.ContainerGroups.DeleteById(containerGroup.Id);
+            Log($"Deleting container group '{containerGroupName}'...");
+            azure.ContainerGroups.DeleteById(containerGroup?.Id);
             return;
         }
 
@@ -181,6 +165,12 @@ namespace DurableComedy
         {
             var creds = new AzureCredentialsFactory().FromServicePrincipal(EnvironmentVariables.Client, EnvironmentVariables.Key, EnvironmentVariables.Tenant, AzureEnvironment.AzureGlobalCloud);
             return Microsoft.Azure.Management.Fluent.Azure.Authenticate(creds).WithSubscription(EnvironmentVariables.SubscriptionId);
+        }
+
+        private void Log(string message)
+        {
+            _logger.LogInformation(message);
+            Console.WriteLine(message);
         }
     }
 }

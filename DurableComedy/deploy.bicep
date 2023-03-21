@@ -21,6 +21,7 @@ param location string = resourceGroup().location
 param runtime string = 'dotnet'
 
 var functionAppName = appName
+var applicationInsightsName = appName
 var hostingPlanName = appName
 var storageAccountName = '${appName}storage'
 var functionWorkerRuntime = runtime
@@ -32,6 +33,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
     name: storageAccountType
   }
   kind: 'Storage'
+}
+
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: applicationInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    Request_Source: 'IbizaWebAppExtensionCreate'
+  }
 }
 
 resource hostingPlan 'Microsoft.Web/serverfarms@2021-03-01' = {
@@ -58,6 +69,10 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
         {
           name: 'AzureWebJobsStorage'
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
+        }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: applicationInsights.properties.InstrumentationKey
         }
         {
           name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
