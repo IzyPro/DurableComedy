@@ -1,6 +1,5 @@
 ﻿using ComedyBot;
 using System.Text.Json;
-using static System.Net.WebRequestMethods;
 
 using HttpClient client = new();
 client.DefaultRequestHeaders.Accept.Clear();
@@ -62,7 +61,7 @@ static async Task<HttpResponseMessage> ProcessHTTPRequestAsync(HttpClient client
 static async Task RaiseCompletedEvent(HttpClient client, string instanceId, string eventName)
 {
     string baseURL = "https://durablecomedy.azurewebsites.net"; //"http://localhost:7116";
-    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/admin/extensions/DurableTaskExtension/instances/{instanceId}/raiseEvent/{eventName}");
+    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/admin/extensions/DurableTaskExtension/instances/{instanceId}/raiseEvent/{eventName}?taskHub=TestHubName&connection=Storage&code=cI5f7vA1vszjjnQGLpCBEKCEBvx1nZ6VNDLGnViGZn8iAzFuf5WiRg==");
     if (!response.IsSuccessStatusCode)
     {
         Console.WriteLine($"\nFailed to Raise Event {eventName}. Press Enter to try again or any other key to exit");

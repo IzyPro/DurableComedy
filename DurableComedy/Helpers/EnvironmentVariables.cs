@@ -11,7 +11,7 @@ namespace DurableComedy.Helpers
         public static string ResourceGroupName { get; } = Environment.GetEnvironmentVariable("ResourceGroupName"); 
 
         public static string Server { get; } = Environment.GetEnvironmentVariable("Server");
-        public static string Username { get; } = Environment.GetEnvironmentVariable("Username");
-        public static string Password { get; } = Environment.GetEnvironmentVariable("Password");
+        public static string Username { get; } = Environment.GetEnvironmentVariable("RegistryUsername");
+        public static string Password { get; } = Environment.GetEnvironmentVariable("RegistryPassword");
     }
 }

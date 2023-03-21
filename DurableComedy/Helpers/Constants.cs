@@ -2,9 +2,7 @@
 {
     public static class Constants
     {
-        public const string ResourceGroupName = "DurableComedyRG";
-        public const string ContainerGroupName = "CG_DurableComedy";
-        public const string InstanceID = "DurableComedyInstanceID";
+        public const string ContainerGroupName = "durable-comedy-cg";
     }
 
     public static class Function
