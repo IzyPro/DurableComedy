@@ -91,18 +91,4 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
     }
     httpsOnly: true
   }
-  dependsOn: [
-    storageAccount
-    hostingPlan
-  ]
-}
-
-resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2022-03-01' = {
-  parent: functionApp
-  name: 'web'
-  properties: {
-    repoUrl: 'https://github.com/IzyPro/DurableComedy'
-    branch: 'main'
-    isManualIntegration: false
-  }
 }

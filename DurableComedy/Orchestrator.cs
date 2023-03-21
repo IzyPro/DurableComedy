@@ -73,8 +73,6 @@ namespace DurableComedy
                 //This activition function delete the ACI group once its done with its job
                 await context.CallActivityAsync<string>(Function.DeleteCG, Constants.ContainerGroupName);
             }
-            
-
             return result;
         }
 
@@ -175,6 +173,7 @@ namespace DurableComedy
             }
             Console.WriteLine($"Deleting container group '{containerGroupName}'...");
             azure.ContainerGroups.DeleteById(containerGroup.Id);
+            return;
         }
 
 
