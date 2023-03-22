@@ -68,7 +68,7 @@ static async Task<HttpResponseMessage> ProcessHTTPRequestAsync(HttpClient client
 static async Task RaiseCompletedEvent(HttpClient client, string instanceId, string eventName)
 {
     string baseURL = "https://durablecomedy.azurewebsites.net";
-    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/{eventName}?taskHub=durablecomedy&connection=Storage&code=5XIu6WghnBJJ-H3Bms5T8ReToVZSBcv491_-teLJ09tBAzFunUAd0Q==", new StringContent(eventName, Encoding.UTF8, "application/json"));
+    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/{eventName}?taskHub=durablecomedy&connection=Storage&code=5XIu6WghnBJJ-H3Bms5T8ReToVZSBcv491_-teLJ09tBAzFunUAd0Q==", new StringContent("delete", Encoding.UTF8, "application/json"));
     var content = await response.Content.ReadAsStringAsync();
     Console.WriteLine($"\n\nStatus Code: {(int)response.StatusCode} {response.StatusCode}");
     Console.WriteLine($"Response Message: {response.RequestMessage}");
