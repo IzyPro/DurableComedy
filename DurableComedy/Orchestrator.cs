@@ -58,7 +58,7 @@ namespace DurableComedy
 
             var ipAddress = await context.CallActivityAsync<string>(Function.OrchestrateCG, (Constants.ContainerGroupName, containerImage, context.InstanceId));
 
-            Console.WriteLine("Waiting for external event...");
+            Log("Waiting for external event...");
             //Return Boolean, this will be invoked from the ACI container once its done with its job
             try
             {
