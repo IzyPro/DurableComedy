@@ -1,4 +1,6 @@
 ﻿using ComedyBot;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 
 using HttpClient client = new();
@@ -33,7 +35,7 @@ static async Task TellAJoke(HttpClient client)
             Console.WriteLine($"A: {joke.delivery}");
         }
         else
-            Console.WriteLine($"Q: {joke.joke}");
+            Console.WriteLine($"Joke: {joke.joke}");
     }
     catch (Exception ex)
     {
@@ -41,11 +43,14 @@ static async Task TellAJoke(HttpClient client)
     }
 }
 
-static async Task<HttpResponseMessage> ProcessHTTPRequestAsync(HttpClient client, HttpMethod method, string url)
+static async Task<HttpResponseMessage> ProcessHTTPRequestAsync(HttpClient client, HttpMethod method, string url, [Optional] StringContent? content)
 {
     try
     {
-        return await client.SendAsync(new HttpRequestMessage(method, url));
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if(content != null)
+            request.Content = content;
+        return await client.SendAsync(request);
     }
     catch (Exception ex) 
     { 
@@ -61,11 +66,12 @@ static async Task<HttpResponseMessage> ProcessHTTPRequestAsync(HttpClient client
 static async Task RaiseCompletedEvent(HttpClient client, string instanceId, string eventName)
 {
     string baseURL = "https://durablecomedy.azurewebsites.net"; //"http://localhost:7116";
-    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/{eventName}?taskHub=durablecomedy&connection=Storage&code=5XIu6WghnBJJ-H3Bms5T8ReToVZSBcv491_-teLJ09tBAzFunUAd0Q==");
+    var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/{eventName}?taskHub=durablecomedy&connection=Storage&code=5XIu6WghnBJJ-H3Bms5T8ReToVZSBcv491_-teLJ09tBAzFunUAd0Q==", new StringContent(string.Empty, Encoding.UTF8, "application/json"));
     var content = await response.Content.ReadAsStringAsync();
     Console.WriteLine($"\nStatus Code: {(int)response.StatusCode} {response.StatusCode}");
     Console.WriteLine($"Response Message: {response.RequestMessage}");
     Console.WriteLine($"Response Content: {content}");
+
     if (!response.IsSuccessStatusCode)
     {
         Console.WriteLine($"\nFailed to Raise Event {eventName}. Press Enter to try again or any other key to exit");
