@@ -62,11 +62,14 @@ static async Task RaiseCompletedEvent(HttpClient client, string instanceId, stri
 {
     string baseURL = "https://durablecomedy.azurewebsites.net"; //"http://localhost:7116";
     var response = await ProcessHTTPRequestAsync(client, HttpMethod.Post, baseURL + $"/runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/{eventName}?taskHub=durablecomedy&connection=Storage&code=5XIu6WghnBJJ-H3Bms5T8ReToVZSBcv491_-teLJ09tBAzFunUAd0Q==");
+    var content = await response.Content.ReadAsStringAsync();
+    Console.WriteLine($"Status Code: {(int)response.StatusCode} {response.StatusCode}");
     Console.WriteLine($"Response Message: {response.RequestMessage}");
-    Console.WriteLine($"Response Content: {response.Content}");
+    Console.WriteLine($"Response Content: {content}");
     if (!response.IsSuccessStatusCode)
     {
         Console.WriteLine($"\nFailed to Raise Event {eventName}. Press Enter to try again or any other key to exit");
+        await Task.Delay(3000);
         Console.WriteLine("Retrying...");
         await RaiseCompletedEvent(client, instanceId, eventName);
         return;
